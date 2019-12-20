@@ -15,7 +15,6 @@ from sklearn.ensemble import RandomForestRegressor
 
 from models import SimiarityModel, FDAModel, tanimoto
 from utils import get_fingerprint, load_data_csv, load_data, save_data, write_results
-import matplotlib.pyplot as plt
 
 from sklearn.metrics import silhouette_score
 import json
@@ -127,7 +126,6 @@ def train_test(tr_file, te_file, scale_data=True, load_txt = True, simiarity_con
     model = SimiarityModel(**simiarity_config)
     model.fit(Xtr,ytr)
     p1 = sklearn.metrics.r2_score(yte, model.predict(Xte)[0])
-    print(p1, simiarity_config)
    
     #Fit FDA model
     if not fda_config:
@@ -154,7 +152,6 @@ def train_test(tr_file, te_file, scale_data=True, load_txt = True, simiarity_con
     model = FDAModel(**fda_config)
     model.fit(Xtr,ytr)
     p2 = sklearn.metrics.r2_score(yte, model.predict(Xte)[0])
-    print(p2,fda_config)
     
     #Fit ensemble model.
     if not auto_config:
@@ -191,7 +188,6 @@ def train_test(tr_file, te_file, scale_data=True, load_txt = True, simiarity_con
     automl = autosklearn.regression.AutoSklearnRegressor(**auto_config)
     automl.fit(tmpXtr, ytr, feat_type=feat_type)
     p3 = sklearn.metrics.r2_score(yte, automl.predict(tmpXte))
-    print(p3, auto_config)
     
     configs = {}
     configs['simiarity'] = simiarity_config
@@ -206,7 +202,6 @@ def main(cv = False, datasets = None, configs = None, prediction = False, load_t
     
     simiarity_config = {}
     fda_config = {}
-    auto_config = {'time_left_for_this_task':120,'per_run_time_limit':30}
     auto_config = {}
     if configs:
         with open(configs) as json_file:
