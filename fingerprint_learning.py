@@ -16,6 +16,8 @@ from sklearn.ensemble import RandomForestRegressor
 from models import SimiarityModel, FDAModel, tanimoto
 from utils import get_fingerprint, load_data_csv, load_data, save_data, write_results
 
+from collections import namedtuple
+
 from sklearn.metrics import silhouette_score
 import json
 import argparse
@@ -179,9 +181,15 @@ def train_test(tr_file, te_file, scale_data=True, load_txt = True, simiarity_con
         if auto_config.pop('tanimoto_based',None):
             tmpXtr = to_tanimoto(Xtr,Xtr)
             tmpXte = to_tanimoto(Xte,Xtr)
+        else:
+            tmpXtr = Xtr 
+            tmpXte = Xte
+    else:
+        tmpXtr = Xtr 
+        tmpXte = Xte
     
     if 'feat_type' in auto_config:
-        feat_type = auto_config.pop('feat_type')
+        feat_type = auto_config.pop('feat_type', None)
     else:
         feat_type = None
         
@@ -202,14 +210,19 @@ def main(cv = False, datasets = None, configs = None, prediction = False, load_t
     
     simiarity_config = {}
     fda_config = {}
-    auto_config = {}
-    if configs:
+    auto_config = {'time_left_for_this_task':60,'per_run_time_limit':10}
+    if configs and not cv:
         with open(configs) as json_file:
             data = json.load(json_file)
             if 'simiarity' in data:
                 simiarity_config = data['simiarity']
             if 'fda' in data:
                 fda_config = data['fda']
+                for k in fda_config:
+                    if isinstance(fda_config[k],dict):
+                        c,tmp = fda_config[k].keys()
+                        fda_config[k] = namedtuple(fda_config[k][c[0]], c[1:])(*fda_config[k][c[1:]])
+                        print(fda_config[k])
             if 'ensemble' in data:
                 auto_config = data['ensemble']
     
@@ -244,8 +257,12 @@ def main(cv = False, datasets = None, configs = None, prediction = False, load_t
             results.append((f,*res))
             
             if cv:
-                with open('configs/'+f+'_config.txt', 'w') as outfile:
-                    json.dump(configs, outfile)
+                try:
+                    with open('configs/'+f+'_config.txt', 'w') as outfile:
+                        json.dump(configs, outfile, default=lambda x: x.__dict__)
+                except:
+                    pass
+                    
     if not prediction:
         write_results('results.md', results, cols = ['Dataset','Simiarity R2','FDA R2','Ensemble R2'])
 
