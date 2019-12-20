@@ -36,11 +36,16 @@ optional arguments:
                         (these are ignored).
 ```
 
-See data folder for dataset options. See config folder for example configurations. A new optimal configuration will be created from the cross validation process. The labels for regression can be scaled between 0 and 1, this can be favourable for certain model. 
+See data folder for dataset options (specify only name, i.e. LC50, not LC50_train.csv). See config folder for example configurations. A new optimal configuration will be created from the cross validation process. The labels for regression can be scaled between 0 and 1, this can be favourable for certain model. 
 During prediction, the program will gather training and test data in the way as before, but test labels will be ignored. 
 If the training and testing files has columns (CID,label), then use the '--fp' flag to gather fingerprints from the PubChem API.
 
+### Example 
+To run CV on the LC50 datasets (Fathead minnow and Daphnia magna) run:
+```
+python3 fingerprint_learning.py -d LC50 LC50DM --cv
+```
 
 ## Results
-The table below show the results for each dataset.
+
 
