@@ -1,7 +1,7 @@
 
 
 # Chemical Effect Prediction Using Chemical Fingerprints.
-This repository aims at predicting chemical effects using the T.E.S.T dataset ([U.S. EPA](https://www.epa.gov/chemical-research/toxicity-estimation-software-tool-test)).
+This repository aims at predicting chemical effects in the T.E.S.T. datasets ([U.S. EPA](https://www.epa.gov/chemical-research/toxicity-estimation-software-tool-test)).
 
 ## Problem
 Each dataset contains training and testing data. Where each sample is a CAS number and a chemical concentration. 
