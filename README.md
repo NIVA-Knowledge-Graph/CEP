@@ -12,7 +12,14 @@ We use three models:
 2. FDA model. The training data is clustered into k clusters. During prediction a model is fitted to the cluster, which is used for prediction. Hyperparameters: k, clustering model, prediction model, model parameters. 
 3. Ensemble model ([auto-sklearn](https://automl.github.io/auto-sklearn/master/)). This library finds the optimal ensemble model for the given problem. Hyperparameters: optimization time (total and per model). 
 
-We report R2 scores. See table at bottom for a excerpt of full results. 
+We report R2 scores. See table at bottom for a excerpt.
+
+### Installation
+```
+virtualenv env -p python3 
+source env/bin/activate
+pip3 install -r req.txt
+```
 
 ## Usage 
 ```
