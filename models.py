@@ -14,13 +14,8 @@ from autosklearn.pipeline.components.base import AutoSklearnRegressionAlgorithm
 from autosklearn.pipeline.constants import SPARSE, DENSE, \
     SIGNED_DATA, UNSIGNED_DATA, PREDICTIONS
 
-def tanimoto(fp1, fp2):
-    fp1 = int(fp1, 16)
-    fp2 = int(fp2, 16)
-    fp1_count = bin(fp1).count('1')
-    fp2_count = bin(fp2).count('1')
-    both_count = bin(fp1 & fp2).count('1')
-    return float(both_count) / (fp1_count + fp2_count - both_count)
+from utils import to_tanimoto, tanimoto
+
 
 class SimiarityModel(AutoSklearnRegressionAlgorithm):
     """
@@ -30,22 +25,25 @@ class SimiarityModel(AutoSklearnRegressionAlgorithm):
         self.top_k = top_k
         
     def fit(self, X, y):
-        self.data = {'0b'+''.join([str(int(a)) for a in x]):yt for x,yt in zip(X,y)}
+        self.X = X
+        self.y = y
         return self
 
     def predict(self, X):
         
+        tmp = to_tanimoto(X,self.X)
+        
         prediction = []
+        
         for x in X:
-            x = '0b'+''.join([str(int(a)) for a in x])
-            tmp = [tanimoto(x,k) for k in self.data]
-            tmp = [(x,y) for x,y in zip(self.data.keys(),tmp)]
-            tmp = sorted(tmp, reverse=True, key=lambda x: x[1])
+            tmp = to_tanimoto([x],self.X)[0]
+            idx = sorted(range(len(tmp)),reverse=True,key=lambda i:tmp[i])
             if self.top_k:
-                tmp = tmp[:min(self.top_k,len(self.data))]
-            a = [self.data[k[0]] for k in tmp]
-            w = [k[1] for k in tmp]
-            y = np.average(a, weights=w, axis =0)
+                idx = idx[:self.top_k]
+            
+            a = self.y[idx]
+            w = tmp[idx]
+            y = np.average(a, weights=w, axis=0)
             prediction.append(y)
         
         return (np.asarray(prediction),)
@@ -75,21 +73,31 @@ class FDAModel(AutoSklearnRegressionAlgorithm):
     """
     Find the nearest chemicals and fit a model to those.
     """
-    def __init__(self, clustering_method=KMeans, n_clusters=8, model_type=LinearRegression, random_state=None):
-        self.model_class = model_type()
+    def __init__(self, clustering_method=KMeans, n_clusters=8, model_type=LinearRegression, tanimoto_based=False, random_state=None):
+        self.model_class = model_type
         self.cluster_model = clustering_method(n_clusters=n_clusters)
+        self.tanimoto_based = tanimoto_based
         
     def fit(self, X, y):
-        self.clustering = self.cluster_model.fit(X).labels_
+        self.Xtr = X
+        self.X = X
+        if self.tanimoto_based:
+            self.X = to_tanimoto(self.X,self.X)
+        self.clustering = self.cluster_model.fit_predict(self.X)
         self.y = y
         return self
 
     def predict(self, X):
-        
+        if self.tanimoto_based:
+            X = to_tanimoto(X,self.Xtr)
+            
         prediction = []
-        for p in self.cluster_model.predict(X):
-            tmp = self.y[self.clustering==p]
-            prediction.append(np.mean(tmp))
+        for p,x in zip(self.cluster_model.predict(X),X):
+            model = self.model_class()
+            tmp = self.clustering==p
+            model.fit(self.X[tmp],self.y[tmp])
+            p = model.predict(x.reshape((1,-1)))[0]
+            prediction.append(p)
         
         return (np.asarray(prediction),)
     
@@ -131,7 +139,7 @@ class FDAModel(AutoSklearnRegressionAlgorithm):
             default_value=RandomForestRegressor
         )
         k = UniformIntegerHyperparameter(
-            name='k', lower=2, upper=20, default_value=8
+            name='n_clusters', lower=2, upper=20, default_value=8
         )
         cs.add_hyperparameters([clustering_method,model_type,k])
         return cs
